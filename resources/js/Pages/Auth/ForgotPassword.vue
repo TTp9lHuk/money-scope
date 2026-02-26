@@ -5,6 +5,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import Meta from "@/Components/Meta.vue";
 
 defineProps({
     status: {
@@ -23,12 +24,12 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Forgot Password" />
+        <Meta title="Забыли пароль."/>
 
         <div class="mb-4 text-sm text-gray-600">
-            Forgot your password? No problem. Just let us know your email
-            address and we will email you a password reset link that will allow
-            you to choose a new one.
+            Забыли пароль? Нет проблем. Просто сообщите нам свой адрес электронной почты,
+            и мы вышлем вам ссылку для сброса пароля, которая позволит
+            выбрать новый пароль.
         </div>
 
         <div

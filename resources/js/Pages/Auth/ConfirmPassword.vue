@@ -5,6 +5,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import Meta from "@/Components/Meta.vue";
 
 const form = useForm({
     password: '',
@@ -19,11 +20,10 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Confirm Password" />
+        <Meta title="Подтверждение пароля."/>
 
         <div class="mb-4 text-sm text-gray-600">
-            This is a secure area of the application. Please confirm your
-            password before continuing.
+            Пожалуйста, подтвердите свой пароль, прежде чем продолжить.
         </div>
 
         <form @submit.prevent="submit">
