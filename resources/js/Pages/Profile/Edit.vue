@@ -25,11 +25,11 @@ defineProps({
         </template>
 
         <div class="py-12 space-y-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-[#1e293b] border-slate-700 shadow-2xl rounded-2xl p-8">
+            <div class="bg-dark-card border-slate-700 shadow-2xl rounded-2xl p-8">
                 <UpdateProfileInformationForm :must-verify-email="mustVerifyEmail" :status="status" />
             </div>
 
-            <div class="bg-[#1e293b] border-slate-700 shadow-2xl rounded-2xl p-8">
+            <div class="bg-dark-card border-slate-700 shadow-2xl rounded-2xl p-8">
                 <UpdatePasswordForm />
             </div>
 

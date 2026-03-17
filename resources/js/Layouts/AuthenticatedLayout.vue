@@ -13,9 +13,11 @@ const showingNavigationDropdown = ref(false);
     <div class="min-h-screen bg-dark-bg flex">
         <aside class="w-64 bg-gray-900 border-r border-gray-800 flex-shrink-0 hidden md:flex flex-col">
             <div class="p-6 flex items-center space-x-3">
-                <ApplicationLogo class="w-10 h-10" /> <Link :href="route('dashboard')" class="text-xl font-bold bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent tracking-tighter">
-                MONEY SCOPE
-            </Link>
+                <ApplicationLogo class="w-10 h-10"/>
+                <Link :href="route('dashboard')"
+                      class="text-xl font-bold bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent tracking-tighter">
+                    MONEY SCOPE
+                </Link>
             </div>
 
             <nav class="flex-1 px-4 space-y-1">
