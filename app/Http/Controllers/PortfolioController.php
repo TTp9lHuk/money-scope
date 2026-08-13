@@ -17,15 +17,20 @@ class PortfolioController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $portfolioData = $request->validate([
             'name' => 'required|string|max:255',
-            'broker_type' => 'required|string',
-            'api_token' => 'nullable|string',
+            'account_id' => 'required|int',
             'currency' => 'required|string|size:3',
         ]);
 
-        // Создаем портфель через связь с текущим пользователем
-        $request->user()->portfolios()->create($validated);
+        $brokerConnectionsData = $request->validate([
+            'name' => 'required|string|max:255',
+            'broker_type' => 'required|string',
+            'api_token' => 'nullable|string',
+        ]);
+
+        $request->user()->portfolios()->create($portfolioData);
+        $request->user()->brokerConnections()->create($brokerConnectionsData);
 
         return Redirect::back()->with('message', 'Портфель успешно добавлен!');
     }

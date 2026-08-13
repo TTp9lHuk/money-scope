@@ -4,24 +4,38 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Portfolio extends Model
 {
-    // Портфели
     protected $fillable = [
-        'name',             # Название (например, "Основной Т-Банк").
-        'broker_type',      # tinkoff, binance, manual и т.д.
-        'api_token',        # Зашифрованный токен (если подключен по API).
-        'currency',         # Базовая валюта (RUB, USD).
+        'user_id',
+        'account_id',
+        'type',
+        'name',
+        'status',
+        'opened_date',
+        'closed_date',
+        'access_level',
+        'currency',
+        'last_synced_at',
+        'sync_status',
+        'sync_error_message',
+        'autosync_enabled',
+        'raw_payload',
     ];
 
-    /**
-     * Автоматическое шифрование полей
-     */
-    protected $casts = [
-        // 'encrypted' — это встроенный каст Laravel для AES-256-CBC
-        'api_token' => 'encrypted',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'opened_date' => 'datetime',
+            'closed_date' => 'datetime',
+            'last_synced_at' => 'datetime',
+            'autosync_enabled' => 'boolean',
+            'raw_payload' => 'array',
+        ];
+    }
 
     /**
      * Связь с пользователем
@@ -29,5 +43,15 @@ class Portfolio extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function brokerConnection(): HasOne
+    {
+        return $this->hasOne(BrokerConnection::class);
+    }
+
+    public function positions(): HasMany
+    {
+        return $this->hasMany(PortfolioPosition::class);
     }
 }

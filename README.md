@@ -1,59 +1,337 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## Доменная модель MVP
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+В MVP `money-scope` работает только с T-Банком через Invest API.
 
-## About Laravel
+Основная логика:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+1. Пользователь вводит API-токен T-Банка.
+2. Сервис получает список счетов через `GetAccounts`.
+3. Пользователь выбирает один счет.
+4. Выбранный счет сохраняется как `Portfolio`.
+5. Токен сохраняется в `BrokerConnection`.
+6. После синхронизации позиции счета сохраняются в `PortfolioPosition`.
+7. Инструменты сохраняются в справочник `Asset`.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Схема связей
 
-## Learning Laravel
+```text
+User 1 → N Portfolio
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Portfolio 1 → 1 BrokerConnection
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Portfolio 1 → N PortfolioPosition
 
-## Laravel Sponsors
+Asset 1 → N PortfolioPosition
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Итоговая схема:
 
-### Premium Partners
+```text
+users
+  ↓
+portfolios
+  ↓
+broker_connections
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+portfolios
+  ↓
+portfolio_positions
+  ↓
+assets
+```
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## users
 
-## Code of Conduct
+Стандартная таблица пользователей Laravel.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Назначение
 
-## Security Vulnerabilities
+Хранит зарегистрированных пользователей приложения.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Основные связи
 
-## License
+```text
+User hasMany Portfolio
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Основные поля
+
+| Поле         | Назначение                 |
+| ------------ | -------------------------- |
+| `id`         | Внутренний ID пользователя |
+| `name`       | Имя пользователя           |
+| `email`      | Email пользователя         |
+| `password`   | Хеш пароля                 |
+| `created_at` | Дата создания              |
+| `updated_at` | Дата обновления            |
+
+---
+
+## portfolios
+
+В MVP `Portfolio` — это выбранный пользователем счет T-Банка.
+
+То есть один `Portfolio` соответствует одному счету, полученному из `GetAccounts`.
+
+### Назначение
+
+Хранит выбранный брокерский счет пользователя и состояние его синхронизации.
+
+### Основные связи
+
+```text
+Portfolio belongsTo User
+Portfolio hasOne BrokerConnection
+Portfolio hasMany PortfolioPosition
+```
+
+### Основные поля
+
+| Поле                 | Назначение                                                  |
+| -------------------- | ----------------------------------------------------------- |
+| `id`                 | Внутренний ID портфеля                                      |
+| `user_id`            | Пользователь, которому принадлежит портфель                 |
+| `account_id`         | ID счета из T-Bank API                                      |
+| `type`               | Тип счета из API                                            |
+| `name`               | Название счета / пользовательское имя портфеля              |
+| `status`             | Статус счета из API                                         |
+| `opened_date`        | Дата открытия счета                                         |
+| `closed_date`        | Дата закрытия счета                                         |
+| `access_level`       | Уровень доступа к счету                                     |
+| `currency`           | Основная валюта отображения                                 |
+| `last_synced_at`     | Дата последней успешной синхронизации                       |
+| `sync_status`        | Статус синхронизации: `idle`, `syncing`, `success`, `error` |
+| `sync_error_message` | Последняя ошибка синхронизации                              |
+| `autosync_enabled`   | Включено ли автообновление                                  |
+| `raw_payload`        | Сырой ответ API по счету                                    |
+| `created_at`         | Дата создания                                               |
+| `updated_at`         | Дата обновления                                             |
+
+---
+
+## broker_connections
+
+`BrokerConnection` хранит подключение к брокеру.
+
+В MVP один `BrokerConnection` связан с одним `Portfolio`.
+
+### Назначение
+
+Хранит API-токен T-Банка и настройки подключения.
+
+### Основные связи
+
+```text
+BrokerConnection belongsTo Portfolio
+```
+
+### Основные поля
+
+| Поле                 | Назначение                                                |
+| -------------------- | --------------------------------------------------------- |
+| `id`                 | Внутренний ID подключения                                 |
+| `portfolio_id`       | Портфель, к которому относится подключение                |
+| `broker_type`        | Тип брокера, например `tbank`                             |
+| `api_token`          | API-токен брокера. Должен храниться в зашифрованном виде  |
+| `last_synced_at`     | Дата последней проверки / синхронизации подключения       |
+| `sync_status`        | Статус подключения: `idle`, `syncing`, `success`, `error` |
+| `sync_error_message` | Текст последней ошибки                                    |
+| `created_at`         | Дата создания                                             |
+| `updated_at`         | Дата обновления                                           |
+
+---
+
+## assets
+
+`Asset` — это справочник инструментов.
+
+Одна запись в `assets` соответствует одному инструменту: акции, облигации, фонду, валюте и т.д.
+
+### Назначение
+
+Хранит информацию об инструментах из T-Bank API.
+
+### Основные связи
+
+```text
+Asset hasMany PortfolioPosition
+```
+
+### Основные поля
+
+| Поле              | Назначение                     |
+| ----------------- | ------------------------------ |
+| `id`              | Внутренний ID инструмента      |
+| `figi`            | FIGI инструмента               |
+| `instrument_uid`  | UID инструмента из T-Bank API  |
+| `ticker`          | Тикер инструмента              |
+| `class_code`      | Код класса инструмента         |
+| `name`            | Название инструмента           |
+| `instrument_type` | Тип инструмента                |
+| `currency`        | Валюта инструмента             |
+| `isin`            | ISIN инструмента               |
+| `lot`             | Размер лота                    |
+| `is_active`       | Активен ли инструмент          |
+| `raw_payload`     | Сырой ответ API по инструменту |
+| `created_at`      | Дата создания                  |
+| `updated_at`      | Дата обновления                |
+
+---
+
+## portfolio_positions
+
+`PortfolioPosition` — это текущая позиция конкретного портфеля по конкретному инструменту.
+
+Одна запись означает:
+
+> В данном портфеле сейчас есть такой-то инструмент в таком-то количестве.
+
+### Назначение
+
+Хранит текущий состав портфеля после синхронизации через `GetPortfolio`.
+
+### Основные связи
+
+```text
+PortfolioPosition belongsTo Portfolio
+PortfolioPosition belongsTo Asset
+```
+
+### Основные поля
+
+| Поле                          | Назначение                                  |
+| ----------------------------- | ------------------------------------------- |
+| `id`                          | Внутренний ID позиции                       |
+| `portfolio_id`                | Портфель, которому принадлежит позиция      |
+| `asset_id`                    | Инструмент из справочника `assets`          |
+| `position_uid`                | UID позиции из API                          |
+| `quantity`                    | Количество инструмента                      |
+| `quantity_lots`               | Количество лотов                            |
+| `average_position_price`      | Средняя цена позиции                        |
+| `average_position_price_fifo` | Средняя цена FIFO                           |
+| `current_price`               | Текущая цена инструмента                    |
+| `current_value`               | Текущая стоимость позиции                   |
+| `expected_yield`              | Ожидаемая прибыль / убыток                  |
+| `expected_yield_fifo`         | Ожидаемая прибыль / убыток FIFO             |
+| `daily_yield`                 | Дневная доходность                          |
+| `current_nkd`                 | НКД для облигаций                           |
+| `var_margin`                  | Вариационная маржа для срочных инструментов |
+| `blocked`                     | Заблокирована ли позиция                    |
+| `blocked_lots`                | Количество заблокированных лотов            |
+| `currency`                    | Валюта оценки позиции                       |
+| `raw_payload`                 | Сырой ответ API по позиции                  |
+| `created_at`                  | Дата создания                               |
+| `updated_at`                  | Дата обновления                             |
+
+---
+
+## Сценарий интеграции с T-Bank API
+
+### 1. Добавление токена
+
+Пользователь открывает форму добавления портфеля и вводит:
+
+* название портфеля;
+* тип брокера;
+* API-токен.
+
+Пока токен не введен и счет не выбран, кнопка создания неактивна.
+
+---
+
+### 2. Получение счетов
+
+После ввода токена приложение вызывает метод `GetAccounts`.
+
+API возвращает список счетов пользователя.
+
+Полученные счета отображаются в интерфейсе в виде select или карточек.
+
+---
+
+### 3. Выбор счета
+
+Пользователь выбирает один счет.
+
+После выбора счета кнопка создания становится активной.
+
+---
+
+### 4. Создание портфеля
+
+После подтверждения создается запись в `portfolios`.
+
+В нее сохраняются данные выбранного счета:
+
+* `account_id`;
+* `type`;
+* `name`;
+* `status`;
+* `opened_date`;
+* `closed_date`;
+* `access_level`;
+* `raw_payload`.
+
+---
+
+### 5. Создание подключения
+
+Создается запись в `broker_connections`.
+
+В нее сохраняются:
+
+* `portfolio_id`;
+* `broker_type`;
+* `api_token`.
+
+Токен должен храниться в зашифрованном виде через Laravel cast `encrypted`.
+
+---
+
+### 6. Первая синхронизация
+
+После создания портфеля запускается первая синхронизация.
+
+Синхронизация вызывает метод `GetPortfolio` по выбранному `account_id`.
+
+---
+
+### 7. Сохранение инструментов
+
+Для каждой позиции из ответа API создается или обновляется запись в `assets`.
+
+Основные ключи поиска:
+
+* `instrument_uid`;
+* `figi`;
+* комбинация `ticker + class_code`.
+
+---
+
+### 8. Сохранение позиций
+
+Для каждой позиции создается или обновляется запись в `portfolio_positions`.
+
+Позиция связывается с:
+
+* `portfolio_id`;
+* `asset_id`.
+
+---
+
+### 9. Отображение портфеля
+
+После синхронизации пользователь видит:
+
+* общую стоимость портфеля;
+* текущие позиции;
+* количество;
+* текущую цену;
+* текущую стоимость;
+* доходность;
+* время последнего обновления;
+* статус синхронизации.

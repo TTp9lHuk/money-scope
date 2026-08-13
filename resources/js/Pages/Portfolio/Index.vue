@@ -37,9 +37,9 @@ defineProps({ portfolios: Array });
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Инвестиционные портфели</h2>
+            <h2 class="font-bold text-2xl text-white tracking-tight">Инвестиционные портфели</h2>
         </template>
-
+        <pre style="display: none;">{{ portfolios }}</pre>
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-dark-card overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -53,6 +53,7 @@ defineProps({ portfolios: Array });
                     <div v-if="portfolios.length === 0" class="text-gray-400 text-center py-10">
                         У вас пока нет созданных портфелей. Начните с подключения Тинькофф API.
                     </div>
+                    <div v-else class="text-gray-400 text-center py-10">asdfasfdasdfas</div>
                 </div>
             </div>
         </div>
