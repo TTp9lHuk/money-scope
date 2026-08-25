@@ -2,32 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FetchBrokerAccountsRequest;
 use App\Services\Brokers\TBank\TBankClient;
+use App\Services\PortfolioService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class BrokerConnectionController extends Controller
 {
-    protected TBankClient $clientTBank;
-    public function __construct()
+
+    public function __construct(protected TBankClient $clientTBank, protected PortfolioService $portfolioService)
     {
-        $this->clientTBank = new TBankClient();
+
     }
 
-    public function fetchAccounts(Request $request): JsonResponse
+    public function fetchAccounts(FetchBrokerAccountsRequest $request): JsonResponse
     {
-        $token = $request->input('api_token');
-
-        if (!$token) {
-            return response()->json([
-                'error' => 'Токен обязателен'
-            ], 422);
-        }
+        $validated = $request->validated();
+        $token = $validated['api_token'];
 
         try {
             $accounts = $this->clientTBank->getAccounts($token);
-
+            $accounts['accounts'] = $this->portfolioService->excludeIssetsPortfolio($request->user(), $accounts['accounts']);
             return response()->json([
                 'data' => $accounts,
                 'success' => true

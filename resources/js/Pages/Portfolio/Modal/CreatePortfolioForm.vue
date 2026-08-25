@@ -59,14 +59,14 @@ const loadBrokerAccounts = async () => {
             api_token: form.api_token,
             broker_type: form.broker_type,
         });
-        console.log(data.data.accounts,'data');
+
         brokerAccounts.value = data.data.accounts|| [];
 
         if (brokerAccounts.value.length === 1) {
            console.log(brokerAccounts.value,'brokerAccounts.value');
         }
 
-    } catch (err) {console.log(err,'err');
+    } catch (err) {
         accountsError.value = err.response?.data?.error || 'Ошибка загрузки';
     } finally {
         await new Promise(resolve => setTimeout(resolve, 300));
