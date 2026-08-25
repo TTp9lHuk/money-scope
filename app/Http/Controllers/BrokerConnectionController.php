@@ -12,9 +12,11 @@ use Illuminate\Http\JsonResponse;
 class BrokerConnectionController extends Controller
 {
 
-    public function __construct(protected TBankClient $clientTBank, protected PortfolioService $portfolioService)
+    public function __construct(
+        protected TBankClient $clientTBank,
+        protected PortfolioService $portfolioService
+    )
     {
-
     }
 
     public function fetchAccounts(FetchBrokerAccountsRequest $request): JsonResponse
@@ -24,7 +26,7 @@ class BrokerConnectionController extends Controller
 
         try {
             $accounts = $this->clientTBank->getAccounts($token);
-            $accounts['accounts'] = $this->portfolioService->excludeIssetsPortfolio($request->user(), $accounts['accounts']);
+            $accounts['accounts'] = $this->portfolioService->excludeExistingPortfolios($request->user(), $accounts['accounts']);
             return response()->json([
                 'data' => $accounts,
                 'success' => true
