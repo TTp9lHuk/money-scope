@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\BrokersEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class FetchBrokerAccountsRequest extends FormRequest
 {
@@ -23,7 +25,10 @@ class FetchBrokerAccountsRequest extends FormRequest
     {
         return [
             'api_token' => ['required', 'string'],
-            'broker_type' => ['required', 'string'],
+            'broker_type' => [
+                'required',
+                Rule::enum(BrokersEnum::class),
+            ],
         ];
     }
 }
