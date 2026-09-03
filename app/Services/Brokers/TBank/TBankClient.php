@@ -3,7 +3,6 @@
 namespace App\Services\Brokers\TBank;
 
 use App\Contracts\BrokerClientInterface;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
 class TBankClient implements BrokerClientInterface
