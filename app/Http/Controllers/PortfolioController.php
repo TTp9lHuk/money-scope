@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PortfolioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
@@ -15,24 +16,23 @@ class PortfolioController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, PortfolioService $portfolioService)
     {
-        $portfolioData = $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'account_id' => 'required|int',
             'currency' => 'required|string|size:3',
-        ]);
-
-        $brokerConnectionsData = $request->validate([
-            'name' => 'required|string|max:255',
             'broker_type' => 'required|string',
             'api_token' => 'nullable|string',
         ]);
 
-        $request->user()->portfolios()->create($portfolioData);
-        $request->user()->brokerConnections()->create($brokerConnectionsData);
+        $result = $portfolioService->createPortfolioWithBroker(
+            $request->user(),
+            $validated
+        );
 
-        return Redirect::back()->with('message', 'Портфель успешно добавлен!');
+        return Redirect::back()
+            ->with('message', 'Портфель успешно добавлен!');
     }
 
 }

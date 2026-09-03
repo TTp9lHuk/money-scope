@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class PortfolioService
 {
@@ -24,4 +26,27 @@ class PortfolioService
 
         return array_values($accounts);
     }
+
+    public function createPortfolioWithBroker(User $user, array $portfolioBrokerData): array
+    {
+        return DB::transaction(function () use ($user, $portfolioBrokerData) {
+            $portfolio = $user->portfolios()->create($portfolioBrokerData);
+
+            $brokerConnection  =$user->brokerConnections()->create([
+                'portfolio_id' => $portfolio->id,
+                ...$portfolioBrokerData
+            ]);
+
+            return [
+                'portfolio' => $portfolio,
+                'broker_connection' => $brokerConnection
+            ];
+        });
+    }
+
+    public function getUserPortfolioWithBrokerPositionsCount(User $user): Collection
+    {
+        return $user->portfolios()->with('brokerConnection')->withCount('positions')->get();
+    }
+
 }
