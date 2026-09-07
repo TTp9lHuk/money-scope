@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Portfolio;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +48,11 @@ class PortfolioService
     public function getUserPortfolioWithBrokerPositionsCount(User $user): Collection
     {
         return $user->portfolios()->with('brokerConnection')->withCount('positions')->get();
+    }
+
+    public function checkUserPortfolioId(User $user, Portfolio $portfolio): bool
+    {
+        return $user->id == $portfolio->user()->first()->id;
     }
 
 }

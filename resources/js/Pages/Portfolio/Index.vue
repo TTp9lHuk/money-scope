@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import CreatePortfolioForm from '@/Pages/Portfolio/Modal/CreatePortfolioForm.vue';
+import PortfolioCard from './Components/PortfolioCard.vue';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -53,7 +54,21 @@ defineProps({ portfolios: Array });
                     <div v-if="portfolios.length === 0" class="text-gray-400 text-center py-10">
                         У вас пока нет созданных портфелей. Начните с подключения Тинькофф API.
                     </div>
-                    <div v-else class="text-gray-400 text-center py-10">asdfasfdasdfas</div>
+                    <div v-else class="text-gray-400 text-center py-10">
+                        <div
+                            v-if="portfolios.length"
+                            class="grid grid-cols-1 gap-4 xl:grid-cols-2"
+                        >
+                            <PortfolioCard
+                                v-for="portfolio in portfolios"
+                                :key="portfolio.id"
+                                :portfolio="portfolio"
+                            />
+                        </div>
+                        <div v-else>
+                            <!-- твой существующий empty state -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

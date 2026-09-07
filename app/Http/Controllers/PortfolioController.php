@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Portfolio;
 use App\Services\PortfolioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -33,6 +34,18 @@ class PortfolioController extends Controller
 
         return Redirect::back()
             ->with('message', 'Портфель успешно добавлен!');
+    }
+
+    public function show(Request $request, Portfolio $portfolio, PortfolioService $portfolioService)
+    {
+        if($portfolioService->checkUserPortfolioId($request->user(), $portfolio)){
+            return Inertia::render('Portfolio/Show', [
+                'portfolio' => $portfolio ?? []
+            ]);
+        }else{
+            return Redirect::back();
+        }
+
     }
 
 }
