@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\BrokersEnum;
+use App\Enums\SyncStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,6 +27,8 @@ class BrokerConnection extends Model
         return [
             'api_token' => 'encrypted',
             'last_synced_at' => 'datetime',
+            'sync_status' => SyncStatusEnum::class,
+            'broker_type' => BrokersEnum::class,
         ];
     }
 

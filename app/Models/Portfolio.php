@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SyncStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,6 +35,7 @@ class Portfolio extends Model
             'last_synced_at' => 'datetime',
             'autosync_enabled' => 'boolean',
             'raw_payload' => 'array',
+            'sync_status' => SyncStatusEnum::class,
         ];
     }
 
@@ -53,5 +55,17 @@ class Portfolio extends Model
     public function positions(): HasMany
     {
         return $this->hasMany(PortfolioPosition::class);
+    }
+
+    public function scopeAutoSyncEnabled(Builder $query): Builder
+    {
+        return $query->where('autosync_enabled', true);
+    }
+
+    public function scopeSyncStatus(
+        Builder $query,
+        SyncStatusEnum $status
+    ): Builder {
+        return $query->where('sync_status', $status->value);
     }
 }
