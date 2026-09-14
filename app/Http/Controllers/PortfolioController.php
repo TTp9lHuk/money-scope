@@ -48,4 +48,11 @@ class PortfolioController extends Controller
 
     }
 
+    public function sync(Request $request, Portfolio $portfolio, PortfolioService $portfolioService)
+    {
+        $portfolioService->syncPortfolio($request->user(),$portfolio->id);
+        dd($portfolio->id);
+        #auth()->user()->portfolios()
+    }
+
 }

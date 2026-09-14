@@ -20,14 +20,26 @@ class TBankClient implements BrokerClientInterface
 
     }
 
-    public function getPortfolio(array $data)
+    public function getPortfolio(string $token, string $accountId): array
     {
-
+        return $this->sendRequest(
+            token: $token,
+            endpoint: '/tinkoff.public.invest.api.contract.v1.OperationsService/GetPortfolio',
+            data: [
+                'accountId' => $accountId,
+            ],
+        );
     }
 
-    public function getPositions(array $data)
+    public function getPositions(string $token, string $accountId): array
     {
-
+        return $this->sendRequest(
+            token: $token,
+            endpoint: '/tinkoff.public.invest.api.contract.v1.OperationsService/GetPositions',
+            data: [
+                'accountId' => $accountId,
+            ],
+        );
     }
 
     protected function sendRequest(string $token, string $endpoint, array $data = []): array

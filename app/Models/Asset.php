@@ -15,8 +15,8 @@ class Asset extends Model
         'name',
         'instrument_type',
         'currency',
-        'isin',
-        'lot',
+        //'isin',
+        //'lot',
         'is_active',
         'raw_payload',
     ];

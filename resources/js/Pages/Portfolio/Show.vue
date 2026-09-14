@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const props = defineProps({
@@ -21,6 +22,26 @@ const statusClasses = {
     syncing: 'bg-sky-500/10 text-sky-400',
     success: 'bg-emerald-500/10 text-emerald-400',
     error: 'bg-red-500/10 text-red-400',
+};
+
+const syncing = ref(false);
+
+const syncPortfolio = () => {
+    router.post(
+        route('portfolios.sync', props.portfolio.id),
+        {},
+        {
+            preserveScroll: true,
+
+            onStart: () => {
+                syncing.value = true;
+            },
+
+            onFinish: () => {
+                syncing.value = false;
+            },
+        }
+    );
 };
 </script>
 
@@ -61,10 +82,12 @@ const statusClasses = {
 
                 <button
                     type="button"
+                    :disabled="syncing"
+                    @click="syncPortfolio"
                     class="rounded-lg bg-accent-blue px-4 py-2 text-sm font-medium text-slate-950
-                           transition hover:opacity-90"
+           transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    Обновить данные
+                    {{ syncing ? 'Обновляем...' : 'Обновить данные' }}
                 </button>
             </div>
 
