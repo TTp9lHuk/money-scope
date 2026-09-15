@@ -66,24 +66,25 @@ class PortfolioService
     {
         $portfolio = $user->portfolios()->find($portfolioId);
 
-        if($this->checkUserPortfolioId($user, $portfolio)){
-
-            $portfolioData = $portfolio->with('brokerConnection')->get()->toArray();
-            $brokerConnection = $portfolioData[0]['broker_connection'];
-            $brokerEnum = BrokersEnum::from($brokerConnection['broker_type']);
-            $brokerClient = $this->brokerClientResolver->resolve($brokerEnum);
-            $portfolioPositions = $brokerClient->getPortfolio($brokerConnection['api_token'],$portfolioData[0]['account_id']);
-            $instrumentalUid = [];
-
-            foreach ($portfolioPositions['positions'] as $portfolioPosition) {
-                $instrumentalUid[$portfolioPosition['instrumentUid']] = $portfolioPosition['instrumentUid'];
-            }
-
-            $assetsMap = $this->assetsService->addAssetFromPortfolioPositions($this->assetsService->getAssets($instrumentalUid),$portfolioPositions['positions']);
-            dd($assetsMap);
-        }else{
+        if (!$portfolio) {
             throw new \Exception("Portfolio doesn't exist");
         }
+
+
+        $brokerConnection = $portfolio->brokerConnection;
+        $brokerClient = $this->brokerClientResolver->resolve($brokerConnection->broker_type);
+        $portfolioPositions = $brokerClient->getPortfolio(
+            $brokerConnection->api_token,
+            $portfolio->account_id
+        );
+        $instrumentUids = [];
+
+        foreach ($portfolioPositions['positions'] as $portfolioPosition) {
+            $instrumentUids[$portfolioPosition['instrumentUid']] = $portfolioPosition['instrumentUid'];
+        }
+
+        $assetsMap = $this->assetsService->addAssetFromPortfolioPositions($this->assetsService->getAssets($instrumentUids), $portfolioPositions['positions']);
+        dd($assetsMap);
     }
 
 }
