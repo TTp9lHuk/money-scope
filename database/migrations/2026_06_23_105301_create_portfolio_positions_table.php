@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('portfolio_id')
-                ->constrained()
+                ->constrained('portfolios')
                 ->cascadeOnDelete();
 
             $table->foreignId('asset_id')
@@ -20,13 +20,9 @@ return new class extends Migration
                 ->constrained('assets')
                 ->nullOnDelete();
 
-            $table->string('position_uid')->nullable()->index();
-            $table->string('figi')->nullable()->index();
-            $table->string('instrument_uid')->nullable()->index();
-
-            $table->string('ticker')->nullable()->index();
-            $table->string('class_code')->nullable()->index();
-            $table->string('instrument_type')->nullable()->index();
+            $table->string('position_uid')
+                ->nullable()
+                ->index();
 
             $table->decimal('quantity', 24, 8)->default(0);
             $table->decimal('quantity_lots', 24, 8)->nullable();
@@ -55,9 +51,10 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['portfolio_id', 'position_uid']);
-            $table->index(['portfolio_id', 'figi']);
-            $table->index(['portfolio_id', 'instrument_uid']);
+            $table->unique([
+                'portfolio_id',
+                'position_uid',
+            ]);
         });
     }
 

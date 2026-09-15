@@ -6,29 +6,40 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('portfolio_id')->constrained()->onDelete('cascade');
 
-            $table->string('ticker'); // Например: SBER, AAPL, BTC
-            $table->string('type');   // stock, bond, crypto, currency
+            $table->string('figi')
+                ->nullable()
+                ->unique();
 
-            // Используем decimal для точности (крипта требует много знаков)
-            $table->decimal('quantity', 20, 8);
-            $table->decimal('buy_price', 15, 2);
+            $table->string('instrument_uid')
+                ->nullable()
+                ->unique();
+
+            $table->string('ticker')->index();
+            $table->string('class_code')->nullable()->index();
+
+            $table->string('name');
+            $table->string('instrument_type');
+
+            $table->string('currency', 12)->nullable();
+
+            $table->string('isin')->nullable()->index();
+            $table->unsignedInteger('lot')->nullable();
+
+            $table->boolean('is_active')->default(true);
+
+            $table->jsonb('raw_payload')->nullable();
 
             $table->timestamps();
+
+            $table->index(['ticker', 'class_code']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('assets');

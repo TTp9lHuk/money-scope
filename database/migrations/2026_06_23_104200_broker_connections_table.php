@@ -11,13 +11,16 @@ return new class extends Migration
         Schema::create('broker_connections', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('user_id')
-                ->constrained()
+            $table->foreignId('portfolio_id')
+                ->unique()
+                ->constrained('portfolios')
                 ->cascadeOnDelete();
 
             $table->string('broker_type');
+
             $table->string('name')->nullable();
 
+            // В модели используется encrypted cast
             $table->text('api_token');
 
             $table->timestamp('last_synced_at')->nullable();

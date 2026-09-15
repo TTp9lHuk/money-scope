@@ -40,10 +40,14 @@ class PortfolioService
         return DB::transaction(function () use ($user, $portfolioBrokerData) {
             $portfolio = $user->portfolios()->create($portfolioBrokerData);
 
-            $brokerConnection  =$user->brokerConnections()->create([
+            /*$brokerConnection  =$user->brokerConnections()->create([
                 'portfolio_id' => $portfolio->id,
                 ...$portfolioBrokerData
-            ]);
+            ]);*/
+
+            $brokerConnection = $portfolio
+                ->brokerConnection()
+                ->create($portfolioBrokerData);
 
             return [
                 'portfolio' => $portfolio,
