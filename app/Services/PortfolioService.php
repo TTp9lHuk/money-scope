@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\BrokersEnum;
 use App\Models\Portfolio;
+use App\Models\PortfolioPosition;
 use App\Models\User;
 use App\Services\Brokers\BrokerClientResolver;
 use Illuminate\Support\Collection;
@@ -38,13 +38,12 @@ class PortfolioService
     public function createPortfolioWithBroker(User $user, array $portfolioBrokerData): array
     {
         return DB::transaction(function () use ($user, $portfolioBrokerData) {
-            $portfolio = $user->portfolios()->create($portfolioBrokerData);
-
-            /*$brokerConnection  =$user->brokerConnections()->create([
-                'portfolio_id' => $portfolio->id,
-                ...$portfolioBrokerData
-            ]);*/
-
+            try {
+                $portfolio = $user->portfolios()->create($portfolioBrokerData);
+            }
+            catch (UniqueConstraintViolationException $e) {
+                throw new PortfolioAlreadyExistsException();
+            }
             $brokerConnection = $portfolio
                 ->brokerConnection()
                 ->create($portfolioBrokerData);
@@ -65,30 +64,134 @@ class PortfolioService
     {
         return $user->id == $portfolio->user()->first()->id;
     }
-
-    public function syncPortfolio(User $user, int $portfolioId): void
+    public function quotationToDecimal(array $value): float
     {
-        $portfolio = $user->portfolios()->find($portfolioId);
-
-        if (!$portfolio) {
-            throw new \Exception("Portfolio doesn't exist");
+        if(empty($value)){
+            $value['units'] = 0;
+            $value['nano'] = 0;
         }
 
+        return (float) $value['units']
+            + ((int) ($value['nano'] ?? 0) / 1_000_000_000);
+    }
 
-        $brokerConnection = $portfolio->brokerConnection;
-        $brokerClient = $this->brokerClientResolver->resolve($brokerConnection->broker_type);
-        $portfolioPositions = $brokerClient->getPortfolio(
-            $brokerConnection->api_token,
-            $portfolio->account_id
-        );
-        $instrumentUids = [];
+    public function syncPortfolio(User $user, int $portfolioId): Portfolio
+    {
+        try {
+            $portfolio = $user->portfolios()->find($portfolioId);
 
-        foreach ($portfolioPositions['positions'] as $portfolioPosition) {
-            $instrumentUids[$portfolioPosition['instrumentUid']] = $portfolioPosition['instrumentUid'];
+            if (!$portfolio) {
+                throw new \Exception("Portfolio doesn't exist");
+            }
+
+            $brokerConnection = $portfolio->brokerConnection;
+            $brokerClient = $this->brokerClientResolver->resolve($brokerConnection->broker_type);
+            $portfolioPositions = $brokerClient->getPortfolio(
+                $brokerConnection->api_token,
+                $portfolio->account_id
+            );
+
+            return DB::transaction(function () use ($portfolio, $portfolioPositions) {
+
+                $instrumentUids = [];
+
+                foreach ($portfolioPositions['positions'] as $portfolioPosition) {
+                    $instrumentUids[$portfolioPosition['instrumentUid']] = $portfolioPosition['instrumentUid'];
+                }
+
+                $assetsMap = $this->assetsService->addAssetFromPortfolioPositions($this->assetsService->getAssets($instrumentUids), $portfolioPositions['positions']);
+                unset($instrumentUids);
+                $portfolioPositionsRows = [];
+                $actualPositionUids = [];
+
+                foreach ($portfolioPositions['positions'] as $portfolioPosition) {
+
+                    $assetId = $assetsMap[$portfolioPosition['instrumentUid']] ?? null;
+
+                    if (!$assetId) {
+                        throw new \RuntimeException(
+                            "Asset not found: {$portfolioPosition['instrumentUid']}"
+                        );
+                    }
+
+                    $actualPositionUids[] = $portfolioPosition['positionUid'];
+
+                    $quantity = $this->quotationToDecimal($portfolioPosition['quantity']);
+                    $currentPrice = $this->quotationToDecimal($portfolioPosition['currentPrice']);
+                    $currentValue = $quantity * $currentPrice;
+
+                    $portfolioPositionsRows[] = [
+                        'asset_id' => $assetId,
+                        'portfolio_id' => $portfolio->id,
+                        'position_uid' => $portfolioPosition['positionUid'],
+                        'quantity' => $this->quotationToDecimal($portfolioPosition['quantity']),
+                        'quantity_lots' => $this->quotationToDecimal($portfolioPosition['quantityLots']),
+                        'average_position_price' => $this->quotationToDecimal($portfolioPosition['averagePositionPrice']),
+                        'average_position_price_fifo' => $this->quotationToDecimal($portfolioPosition['averagePositionPriceFifo']),
+                        'current_price' => $this->quotationToDecimal($portfolioPosition['currentPrice']),
+                        'current_price_pt' => $this->quotationToDecimal($portfolioPosition['averagePositionPricePt']),
+                        'current_value' => $currentValue,
+                        'expected_yield' => $this->quotationToDecimal($portfolioPosition['expectedYield']),
+                        'expected_yield_fifo' => $this->quotationToDecimal($portfolioPosition['expectedYieldFifo']),
+                        'daily_yield' => $this->quotationToDecimal($portfolioPosition['dailyYield']),
+                        'current_nkd' => $this->quotationToDecimal($portfolioPosition['currentNkd']?? []),
+                        'var_margin' => $this->quotationToDecimal($portfolioPosition['varMargin']),
+                        'blocked' => $portfolioPosition['blocked'],
+                        'blocked_lots' => $this->quotationToDecimal($portfolioPosition['blockedLots']),
+                        'currency' => $portfolioPosition['currentPrice']['currency'],
+                        'raw_payload' => json_encode($portfolioPosition, JSON_UNESCAPED_UNICODE),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                PortfolioPosition::upsert(
+                    $portfolioPositionsRows,
+                    ['portfolio_id', 'position_uid'],
+                    [
+                        'asset_id',
+                        'quantity',
+                        'quantity_lots',
+                        'average_position_price',
+                        'average_position_price_fifo',
+                        'current_price',
+                        'current_price_pt',
+                        'current_value',
+                        'expected_yield',
+                        'expected_yield_fifo',
+                        'daily_yield',
+                        'current_nkd',
+                        'var_margin',
+                        'blocked',
+                        'blocked_lots',
+                        'currency',
+                        'raw_payload',
+                        'updated_at',
+                    ]
+                );
+
+                $portfolio->positions()
+                    ->whereNotIn('position_uid', $actualPositionUids)
+                    ->delete();
+
+                $portfolio->update([
+                    'sync_status' => 'success',
+                    'sync_error_message' => null,
+                    'last_synced_at' => now(),
+                ]);
+
+                return $portfolio;
+            });
+
+        }catch (\Throwable $e) {
+
+            $portfolio->update([
+                'sync_status' => 'error',
+                'sync_error_message' => $e->getMessage(),
+            ]);
+
+            throw $e;
         }
-
-        $assetsMap = $this->assetsService->addAssetFromPortfolioPositions($this->assetsService->getAssets($instrumentUids), $portfolioPositions['positions']);
-        dd($assetsMap);
     }
 
 }

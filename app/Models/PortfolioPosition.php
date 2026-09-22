@@ -34,6 +34,7 @@ class PortfolioPosition extends Model
         return [
             'blocked' => 'boolean',
             'raw_payload' => 'array',
+            'current_nkd' => 'integer',
         ];
     }
 

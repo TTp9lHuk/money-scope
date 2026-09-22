@@ -14,28 +14,19 @@ class Portfolio extends Model
     protected $fillable = [
         'user_id',
         'account_id',
-        'type',
         'name',
-        'status',
-        'opened_date',
-        'closed_date',
-        'access_level',
         'currency',
         'last_synced_at',
         'sync_status',
         'sync_error_message',
         'autosync_enabled',
-        'raw_payload',
     ];
 
     protected function casts(): array
     {
         return [
-            'opened_date' => 'datetime',
-            'closed_date' => 'datetime',
             'last_synced_at' => 'datetime',
             'autosync_enabled' => 'boolean',
-            'raw_payload' => 'array',
             'sync_status' => SyncStatusEnum::class,
         ];
     }

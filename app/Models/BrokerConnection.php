@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class BrokerConnection extends Model
 {
     protected $fillable = [
-        'portfolio_id',
         'broker_type',
         'name',
         'api_token',

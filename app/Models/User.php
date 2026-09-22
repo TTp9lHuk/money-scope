@@ -53,8 +53,4 @@ class User extends Authenticatable
         return $this->hasMany(Portfolio::class);
     }
 
-    public function brokerConnections(): HasMany
-    {
-        return $this->hasMany(BrokerConnection::class);
-    }
 }

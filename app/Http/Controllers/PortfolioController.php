@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Portfolio;
+use App\Services\AssetsService;
 use App\Services\PortfolioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -21,7 +22,7 @@ class PortfolioController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'account_id' => 'required|int',
+            'account_id' => 'required|string|max:255',
             'currency' => 'required|string|size:3',
             'broker_type' => 'required|string',
             'api_token' => 'nullable|string',
@@ -36,8 +37,13 @@ class PortfolioController extends Controller
             ->with('message', 'Портфель успешно добавлен!');
     }
 
-    public function show(Request $request, Portfolio $portfolio, PortfolioService $portfolioService)
+    public function show(Request $request, Portfolio $portfolio, PortfolioService $portfolioService, AssetsService $assetsService)
     {
+
+
+        $portfolio->load('positions');
+        $portfolio->load('positions.asset');
+
         if($portfolioService->checkUserPortfolioId($request->user(), $portfolio)){
             return Inertia::render('Portfolio/Show', [
                 'portfolio' => $portfolio ?? []
@@ -48,11 +54,14 @@ class PortfolioController extends Controller
 
     }
 
-    public function sync(Request $request, Portfolio $portfolio, PortfolioService $portfolioService)
-    {
-        $portfolioService->syncPortfolio($request->user(),$portfolio->id);
-        dd($portfolio->id);
-        #auth()->user()->portfolios()
+    public function sync(
+        Request $request,
+        Portfolio $portfolio,
+        PortfolioService $portfolioService
+    ) {
+        $portfolioService->syncPortfolio($request->user(), $portfolio->id);
+
+        return Redirect::route('portfolios.show', $portfolio);
     }
 
 }

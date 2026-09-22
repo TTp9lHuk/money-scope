@@ -44,9 +44,7 @@ class TBankClient implements BrokerClientInterface
 
     protected function sendRequest(string $token, string $endpoint, array $data = []): array
     {
-        $response = Http::withOptions([
-            'verify' => storage_path('certs/tbank.pem'),
-        ])->withToken($token)
+        $response = Http::withToken($token)
             ->acceptJson()
             ->asJson()
             ->timeout(15)
