@@ -31,4 +31,14 @@ class Asset extends Model
     {
         return $this->hasMany(PortfolioPosition::class);
     }
+
+    public function logoUrl(int $size = 160): ?string
+    {
+        if (!$this->isin) {
+            return null;
+        }
+
+        return config('services.tbank.brands_url')
+            . "/{$this->isin}x{$size}.png";
+    }
 }

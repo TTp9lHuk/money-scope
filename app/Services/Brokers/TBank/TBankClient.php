@@ -42,6 +42,17 @@ class TBankClient implements BrokerClientInterface
         );
     }
 
+    public function getAssets(string $token, string $instrumentType): array
+    {
+        return $this->sendRequest(
+            token: $token,
+            endpoint: '/tinkoff.public.invest.api.contract.v1.InstrumentsService/GetAssets',
+            data: [
+                'instrumentType' => $instrumentType,
+            ],
+        );
+    }
+
     protected function sendRequest(string $token, string $endpoint, array $data = []): array
     {
         $response = Http::withToken($token)

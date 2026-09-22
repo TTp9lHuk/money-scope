@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BrokersEnum;
+use App\Http\Resources\PortfolioResource;
 use App\Models\Portfolio;
-use App\Services\AssetsService;
+use App\Services\Brokers\BrokerClientResolver;
 use App\Services\PortfolioService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -37,21 +39,20 @@ class PortfolioController extends Controller
             ->with('message', 'Портфель успешно добавлен!');
     }
 
-    public function show(Request $request, Portfolio $portfolio, PortfolioService $portfolioService, AssetsService $assetsService)
+    public function show(Request $request, Portfolio $portfolio, PortfolioService $portfolioService)
     {
-
-
-        $portfolio->load('positions');
-        $portfolio->load('positions.asset');
-
-        if($portfolioService->checkUserPortfolioId($request->user(), $portfolio)){
-            return Inertia::render('Portfolio/Show', [
-                'portfolio' => $portfolio ?? []
-            ]);
-        }else{
+        if(!$portfolioService->checkUserPortfolioId(
+            $request->user(),
+            $portfolio
+        )) {
             return Redirect::back();
         }
 
+        $portfolio->load('positions.asset');
+
+        return Inertia::render('Portfolio/Show', [
+            'portfolio' => new PortfolioResource($portfolio)
+        ]);
     }
 
     public function sync(
@@ -62,6 +63,21 @@ class PortfolioController extends Controller
         $portfolioService->syncPortfolio($request->user(), $portfolio->id);
 
         return Redirect::route('portfolios.show', $portfolio);
+    }
+
+    public function test(Request $request, BrokerClientResolver $brokerClientResolver)
+    {
+
+        $portfolio = auth()->user()->portfolios()->find(1);
+        $brokerConnection = $portfolio->brokerConnection;
+        $brokerClient = $brokerClientResolver->resolve($brokerConnection->broker_type);
+        $assets = $brokerClient->getAssets(
+            $brokerConnection->api_token,
+            'INSTRUMENT_TYPE_BOND'
+        );
+
+        dd($assets);
+
     }
 
 }

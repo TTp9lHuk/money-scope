@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { Head, Link, router } from '@inertiajs/vue3'
+import {computed, ref} from 'vue'
+import {Head, Link, router} from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import PositionCard from '@/Components/Portfolio/PositionCard.vue'
 
 const props = defineProps({
     portfolio: {
@@ -29,9 +30,60 @@ const statusClasses = {
     error: 'bg-red-500/10 text-red-400',
 }
 
-/**
- * Синхронизация портфеля
- */
+const groups = [
+    {
+        key: 'share',
+        title: 'Акции',
+        icon: '📈'
+    },
+    {
+        key: 'bond',
+        title: 'Облигации',
+        icon: '💵'
+    },
+    {
+        key: 'etf',
+        title: 'Фонды',
+        icon: '📊'
+    },
+    {
+        key: 'other',
+        title: 'Прочее',
+        icon: '📦'
+    },
+    {
+        key: 'currency',
+        title: 'Валюта',
+        icon: '💱'
+    },
+]
+
+
+const groupedPositions = computed(() => {
+
+    const result = {}
+
+    groups.forEach(group => {
+        result[group.key] = []
+    })
+
+    ;(props.portfolio.positions ?? []).forEach(position => {
+
+        const type = position.asset?.instrument_type
+
+
+        if (result[type]) {
+            result[type].push(position)
+        } else {
+            result.other.push(position)
+        }
+
+    })
+
+
+    return result
+})
+
 const syncPortfolio = () => {
     router.post(
         route('portfolios.sync', props.portfolio.id),
@@ -151,10 +203,46 @@ const formatDateTime = (value) => {
         minute: '2-digit',
     }).format(new Date(value))
 }
+
+const groupValue = (positions)=>{
+
+    return positions.reduce((sum,position)=>{
+
+        return sum + Number(position.current_value ?? 0)
+
+    },0)
+
+}
+
+const groupPercent = (positions)=>{
+
+    if(!portfolioValue.value){
+        return 0
+    }
+
+
+    return Math.round(
+        groupValue(positions)
+        /
+        portfolioValue.value
+        *
+        100
+    )
+
+}
+
+const groupColors = {
+    share:'bg-blue-500',
+    bond:'bg-emerald-500',
+    etf:'bg-purple-500',
+    currency:'bg-yellow-500',
+}
+
+
 </script>
 
 <template>
-    <Head :title="portfolio.name" />
+    <Head :title="portfolio.name"/>
 
     <AuthenticatedLayout>
         <div class="mx-auto max-w-7xl">
@@ -287,11 +375,89 @@ const formatDateTime = (value) => {
                         {{ formatDateTime(portfolio.last_synced_at) }}
                     </div>
                 </div>
+
+            </div>
+
+            <!-- Allocation -->
+            <div class="mt-8 rounded-xl border border-dark-border bg-dark-card p-6">
+
+                <h2 class="mb-6 text-lg font-semibold text-white">
+                    Состав портфеля
+                </h2>
+
+
+                <div class="space-y-5">
+
+
+                    <template
+                        v-for="group in groups"
+                        :key="group.key"
+                    >
+
+                        <div
+                            v-if="groupedPositions[group.key].length"
+                        >
+
+
+                            <div class="mb-2 flex justify-between text-sm">
+
+                                <div class="flex gap-2 text-slate-300">
+
+                    <span>
+                        {{group.icon}}
+                    </span>
+
+                                    <span>
+                        {{group.title}}
+                    </span>
+
+                                </div>
+
+
+                                <div class="text-white">
+
+                                    {{groupPercent(groupedPositions[group.key])}}%
+
+                                    ·
+
+                                    {{formatMoney(
+                                    groupValue(groupedPositions[group.key])
+                                )}}
+
+                                </div>
+
+
+                            </div>
+
+
+
+                            <div class="h-3 rounded-full bg-slate-700">
+
+                                <div
+                                    class="h-3 rounded-full"
+                                    :class="groupColors[group.key]"
+                                    :style="{
+                                        width:
+                                        groupPercent(
+                                            groupedPositions[group.key]
+                                        ) + '%'
+                                    }"
+                                ></div>
+
+                            </div>
+
+
+                        </div>
+                    </template>
+
+                </div>
+
+
             </div>
 
             <!-- Positions -->
             <div
-                class="mt-8 overflow-hidden rounded-xl
+                class="mt-8 pb-8 overflow-hidden rounded-xl
                        border border-dark-border bg-dark-card"
             >
                 <!-- Positions header -->
@@ -314,162 +480,70 @@ const formatDateTime = (value) => {
                 <!-- Positions table -->
                 <div
                     v-if="portfolio.positions?.length"
-                    class="overflow-x-auto"
+                    class="overflow-x-auto px-5"
                 >
-                    <table class="w-full min-w-[900px]">
+                    <div class="mt-8 space-y-10">
 
-                        <thead>
-                        <tr
-                            class="border-b border-dark-border
-                                       text-left text-xs text-slate-400"
+                        <template
+                            v-for="group in groups"
+                            :key="group.key"
                         >
-                            <th class="px-5 py-3 font-medium">
-                                Инструмент
-                            </th>
 
-                            <th class="px-5 py-3 text-right font-medium">
-                                Количество
-                            </th>
+                            <div
+                                v-if="groupedPositions[group.key].length"
+                            >
 
-                            <th class="px-5 py-3 text-right font-medium">
-                                Средняя цена
-                            </th>
+                                <div class="mb-4 flex items-center justify-between">
 
-                            <th class="px-5 py-3 text-right font-medium">
-                                Текущая цена
-                            </th>
+                                    <div class="flex items-center gap-2">
 
-                            <th class="px-5 py-3 text-right font-medium">
-                                Стоимость
-                            </th>
+                                        <span>
+                                            {{ group.icon }}
+                                        </span>
 
-                            <th class="px-5 py-3 text-right font-medium">
-                                Доход
-                            </th>
-                        </tr>
-                        </thead>
+                                        <h2 class="text-xl font-semibold text-white">
+                                            {{ group.title }}
+                                        </h2>
 
-                        <tbody>
-                        <tr
-                            v-for="position in portfolio.positions"
-                            :key="position.id"
-                            class="border-b border-dark-border/70
-                                       transition
-                                       last:border-b-0
-                                       hover:bg-white/[0.025]"
-                        >
-                            <!-- Asset -->
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-3">
+                                        <span class="text-sm text-slate-400">
+                                            ({{ groupedPositions[group.key].length }})
+                                        </span>
 
-                                    <!-- Placeholder icon -->
-                                    <div
-                                        class="flex h-10 w-10 shrink-0
-                                                   items-center justify-center
-                                                   rounded-full bg-slate-700
-                                                   text-xs font-semibold
-                                                   text-slate-300"
-                                    >
-                                        {{
-                                            position.asset?.ticker
-                                                ?.substring(0, 2)
-                                                ?.toUpperCase()
-                                            ?? '?'
-                                        }}
                                     </div>
 
-                                    <div class="min-w-0">
-                                        <div
-                                            class="font-medium text-white"
-                                        >
-                                            {{
-                                                position.asset?.ticker
-                                                ?? '—'
-                                            }}
-                                        </div>
 
-                                        <div
-                                            class="mt-0.5 max-w-[240px]
-                                                       truncate text-xs
-                                                       text-slate-400"
-                                        >
-                                            {{
-                                                position.asset?.name
-                                                ?? 'Неизвестный инструмент'
-                                            }}
-                                        </div>
+                                    <div class="text-lg font-semibold text-white">
+                                        {{ formatMoney(
+                                            groupValue(groupedPositions[group.key]),
+                                            portfolio.currency
+                                        ) }}
                                     </div>
+
                                 </div>
-                            </td>
 
-                            <!-- Quantity -->
-                            <td
-                                class="whitespace-nowrap px-5 py-4
-                                           text-right text-sm text-slate-200"
-                            >
-                                {{ formatNumber(position.quantity) }}
-                            </td>
 
-                            <!-- Average price -->
-                            <td
-                                class="whitespace-nowrap px-5 py-4
-                                           text-right text-sm text-slate-200"
-                            >
-                                {{
-                                    formatMoney(
-                                        position.average_position_price,
-                                        position.currency,
-                                    )
-                                }}
-                            </td>
+                                <div
+                                    :class="[
+                                        'grid gap-4',
+                                        groupedPositions[group.key].length === 1
+                                            ? 'grid-cols-1'
+                                            : 'lg:grid-cols-2 xl:grid-cols-3'
+                                    ]"
+                                >
 
-                            <!-- Current price -->
-                            <td
-                                class="whitespace-nowrap px-5 py-4
-                                           text-right text-sm text-slate-200"
-                            >
-                                {{
-                                    formatMoney(
-                                        position.current_price,
-                                        position.currency,
-                                    )
-                                }}
-                            </td>
+                                    <PositionCard
+                                        v-for="position in groupedPositions[group.key]"
+                                        :key="position.id"
+                                        :position="position"
+                                    />
 
-                            <!-- Current value -->
-                            <td
-                                class="whitespace-nowrap px-5 py-4
-                                           text-right text-sm
-                                           font-medium text-white"
-                            >
-                                {{
-                                    formatMoney(
-                                        position.current_value,
-                                        position.currency,
-                                    )
-                                }}
-                            </td>
+                                </div>
 
-                            <!-- Expected yield -->
-                            <td
-                                class="whitespace-nowrap px-5 py-4
-                                           text-right text-sm font-medium"
-                                :class="
-                                        yieldClass(
-                                            position.expected_yield,
-                                        )
-                                    "
-                            >
-                                {{
-                                    formatSignedMoney(
-                                        position.expected_yield,
-                                        position.currency,
-                                    )
-                                }}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                            </div>
+
+                        </template>
+
+                    </div>
                 </div>
 
                 <!-- Empty state -->
