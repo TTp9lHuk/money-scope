@@ -16,16 +16,16 @@ class AssetResource extends JsonResource
     {
         return [
             'id' => $this->id,
-
             'ticker' => $this->ticker,
             'name' => $this->name,
-
             'instrument_type' => $this->instrument_type,
             'currency' => $this->currency,
-
             'isin' => $this->isin,
-
-            'logo_url' => $this->logoUrl(160),
+            'logo_url' => $this->logoUrl($this->ticker,160),
+            'figi' => $this->figi,
+            'instrument_uid' => $this->instrument_uid,
+            'class_code' => $this->class_code,
+            'lot' => $this->lot,
         ];
     }
 }

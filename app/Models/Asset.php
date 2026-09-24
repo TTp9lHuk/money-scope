@@ -32,13 +32,13 @@ class Asset extends Model
         return $this->hasMany(PortfolioPosition::class);
     }
 
-    public function logoUrl(int $size = 160): ?string
+    public function logoUrl(string $tiker, int $size = 160): ?string
     {
-        if (!$this->isin) {
+        if (!$tiker) {
             return null;
         }
 
         return config('services.tbank.brands_url')
-            . "/{$this->isin}x{$size}.png";
+            . "/{$tiker}x{$size}.png";
     }
 }

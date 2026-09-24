@@ -13,6 +13,13 @@ const props = defineProps({
 
 const syncing = ref(false)
 
+const collapsedGroups = ref({})
+
+const toggleGroup = (key) => {
+    collapsedGroups.value[key] =
+        !collapsedGroups.value[key]
+}
+
 /**
  * Статусы синхронизации
  */
@@ -495,8 +502,13 @@ const groupColors = {
 
                                 <div class="mb-4 flex items-center justify-between">
 
-                                    <div class="flex items-center gap-2">
-
+                                    <div
+                                        class="mb-4 flex cursor-pointer items-center gap-2"
+                                        @click="toggleGroup(group.key)"
+                                    >
+                                        <span>
+                                            {{ collapsedGroups[group.key] ? '▶' : '▼' }}
+                                        </span>
                                         <span>
                                             {{ group.icon }}
                                         </span>
@@ -529,6 +541,7 @@ const groupColors = {
                                             ? 'grid-cols-1'
                                             : 'lg:grid-cols-2 xl:grid-cols-3'
                                     ]"
+                                    v-if="!collapsedGroups[group.key]"
                                 >
 
                                     <PositionCard

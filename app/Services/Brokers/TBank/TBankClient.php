@@ -53,6 +53,28 @@ class TBankClient implements BrokerClientInterface
         );
     }
 
+    public function getAssetBy(string $token, string $instrumentUid): array
+    {
+        return $this->sendRequest(
+            token: $token,
+            endpoint: '/tinkoff.public.invest.api.contract.v1.InstrumentsService/GetAssetBy',
+            data: [
+                'id' => $instrumentUid,
+            ],
+        );
+    }
+
+    public function getBondBy(string $token, string $instrumentUid): array
+    {
+        return $this->sendRequest(
+            token: $token,
+            endpoint: '/tinkoff.public.invest.api.contract.v1.InstrumentsService/GetBondBy',
+            data: [
+                'id' => $instrumentUid,
+            ],
+        );
+    }
+
     protected function sendRequest(string $token, string $endpoint, array $data = []): array
     {
         $response = Http::withToken($token)

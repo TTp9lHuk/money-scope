@@ -67,16 +67,25 @@ class PortfolioController extends Controller
 
     public function test(Request $request, BrokerClientResolver $brokerClientResolver)
     {
-
         $portfolio = auth()->user()->portfolios()->find(1);
         $brokerConnection = $portfolio->brokerConnection;
         $brokerClient = $brokerClientResolver->resolve($brokerConnection->broker_type);
+        $assetBy = $brokerClient->getBondBy(
+            $brokerConnection->api_token,
+            'c42d6b40-3be1-4d24-98bc-85e6c981cde7'
+        );
+        dd($assetBy);
+        die;
         $assets = $brokerClient->getAssets(
             $brokerConnection->api_token,
             'INSTRUMENT_TYPE_BOND'
         );
 
-        dd($assets);
+foreach ($assets['assets'] as $asset) {
+    if($asset['instruments'][0]['uid'] != 'c42d6b40-3be1-4d24-98bc-85e6c981cde7')continue;
+    dd($asset);
+}
+        die('+++++');
 
     }
 

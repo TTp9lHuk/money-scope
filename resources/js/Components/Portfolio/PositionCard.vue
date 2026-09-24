@@ -78,15 +78,22 @@ const formatYield = (value, currency)=>{
 
         <div class="flex justify-between">
 
-            <div>
+            <div class="flex items-center gap-3">
 
-                <div class="text-lg font-semibold text-white">
-                    {{position.asset.ticker}}
-                </div>
+                <img
+                    v-if="position.asset.logo_url"
+                    :src="position.asset.logo_url"
+                    class="h-10 w-10 rounded-lg bg-white object-contain p-1"
+                />
 
+                <div>
+                    <div class="font-semibold text-white">
+                        {{ position.asset.name }}
+                    </div>
 
-                <div class="mt-1 text-sm text-slate-400">
-                    {{position.asset.name}}
+                    <div class="text-xs text-slate-400">
+                        {{ position.asset.ticker }}
+                    </div>
                 </div>
 
             </div>
