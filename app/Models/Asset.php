@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Asset extends Model
 {
@@ -30,6 +31,11 @@ class Asset extends Model
     public function portfolioPositions(): HasMany
     {
         return $this->hasMany(PortfolioPosition::class);
+    }
+
+    public function asset(): HasOne
+    {
+        return $this->hasOne(AssetMetadata::class);
     }
 
     public function logoUrl(string $tiker, int $size = 160): ?string
